@@ -10,6 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  ffi: ^1.1.2
 
 dev_dependencies:
   flutter_test:
@@ -28,7 +29,7 @@ flutter:
   plugin:
     platforms:
       ios:
-        pluginClass: FlutterMozjpegPlugin
+        pluginClass: SwiftFlutterMozjpegPlugin
 
   # To add assets to your plugin package, add an assets section, like this:
   # assets:

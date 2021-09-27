@@ -1,4 +1,4 @@
 #import <Flutter/Flutter.h>
 
-@interface FlutterMozjpegPlugin : NSObject<FlutterPlugin>
+@interface FlutterMozjpegPlugin : NSObject <FlutterPlugin>
 @end
