@@ -188,19 +188,59 @@ abstract class FlutterMozjpeg {
         progressCallback: progressCallback,
       );
 
-  static Future<MozJpegEncodedResult?> jpegCompressFile(
-    File file, {
+  static Future<MozJpegEncodedResult?> jpegCompressFileBytes(
+    Uint8List fileBytes, {
     int quality = 75,
     int dpi = 96,
     ProgressCallback? progressCallback,
   }) async {
     return jpegCompressImage(
-      await loadImageFromBytes(await file.readAsBytes()),
+      await loadImageFromBytes(fileBytes),
       quality: quality,
       dpi: dpi,
       progressCallback: progressCallback,
     );
   }
+
+  static Future<MozJpegEncodedResult?> jpegCompressFile(
+    File file, {
+    int quality = 75,
+    int dpi = 96,
+    ProgressCallback? progressCallback,
+  }) async =>
+      jpegCompressFileBytes(
+        await file.readAsBytes(),
+        quality: quality,
+        dpi: dpi,
+        progressCallback: progressCallback,
+      );
+
+  static Future<MozJpegEncodedResult?> jpegCompressRgbaBytes(
+    Uint8List rgba,
+    int width,
+    int height, {
+    int? stride,
+    int quality = 75,
+    int dpi = 96,
+    ProgressCallback? progressCallback,
+  }) =>
+      using((arena) async {
+        final buffer = arena.allocate<Uint8>(rgba.lengthInBytes);
+        final length = rgba.lengthInBytes;
+        for (int i = 0; i < length; i++) {
+          buffer[i] = rgba[i];
+        }
+        return await FlutterMozjpeg.jpegCompress(
+          buffer,
+          width,
+          height,
+          stride ?? width * 4,
+          MozJpegColorSpace.extRGBX,
+          quality: quality,
+          dpi: dpi,
+          progressCallback: progressCallback,
+        );
+      });
 }
 
 /// You must dispose the instance after use it.
