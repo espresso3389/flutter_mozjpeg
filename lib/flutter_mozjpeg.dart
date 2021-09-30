@@ -3,8 +3,6 @@
 // To add platforms, run `flutter create -t plugin --platforms <platforms> .` under the same
 // directory. You can also find a detailed instruction on how to add platforms in the `pubspec.yaml` at https://flutter.dev/docs/development/packages-and-plugins/developing-packages#plugin-platforms.
 
-// ignore_for_file: camel_case_types
-
 import 'dart:async';
 import 'dart:ffi';
 import 'dart:io';
@@ -32,6 +30,7 @@ abstract class FlutterMozjpeg {
 
   /// [How to use async callback between C++ and Dart with FFI?](https://github.com/flutter/flutter/issues/63255)
   /// - Copy dart-sdk's header/impl. files and call `Dart_InitializeApiDL` with [NativeApi.initializeApiDLData](https://api.flutter.dev/flutter/dart-ffi/NativeApi/initializeApiDLData.html).
+  // ignore: non_constant_identifier_names
   static final Dart_InitializeApiDLFunc _Dart_InitializeApiDL =
       mozJpegLib.lookup<NativeFunction<Dart_InitializeApiDLFunc>>("Dart_InitializeApiDL").asFunction();
 
@@ -41,11 +40,11 @@ abstract class FlutterMozjpeg {
 
   static Pointer<Void>? cookie;
 
-  static const int _PROGRESS_PASS_EXITCODE = -1;
-  static const int _PROGRESS_PASS_OUTPUT_FILESIZE = -2;
-  static const int PROGRESS_PASS_VECTOR_PTR = -3;
-  static const int _PROGRESS_TPASS_OPTIMIZED = 1;
-  static const int _PROGRESS_TPASS_ORIGINAL = 2;
+  static const int _progressPassExitCode = -1;
+  static const int _progressPassOutputFileSize = -2;
+  static const int _progressPassVectorPointer = -3;
+  static const int _progressTPassOptimized = 1;
+  static const int _progressTPassNoChange = 2;
 
   static void _ensureDartApiInitialized() {
     if (cookie != null) return;
@@ -62,7 +61,7 @@ abstract class FlutterMozjpeg {
           int pass = message[1] as int;
           // lookup progress callback associated to the context value and invoke it with the parameters
           _progressCallbacks[context]?.call(pass, message[2] as int, message[3] as int);
-          if (pass == _PROGRESS_PASS_EXITCODE) {
+          if (pass == _progressPassExitCode) {
             _progressCallbacks.remove(context);
           }
           return;
@@ -128,7 +127,7 @@ abstract class FlutterMozjpeg {
   }) async {
     final comp = Completer<int>();
     _callMain(_jpegtran, args, "jpegtran", _addProgressCallback((pass, totalPass, percentage) {
-      if (pass == _PROGRESS_PASS_EXITCODE || pass == _PROGRESS_PASS_OUTPUT_FILESIZE) {
+      if (pass == _progressPassExitCode || pass == _progressPassOutputFileSize) {
         comp.complete(percentage);
         return;
       }
@@ -162,11 +161,11 @@ abstract class FlutterMozjpeg {
     final comp = Completer<MozJpegEncodedResult?>();
     _jpegCompress(src, width, height, stride, _cs2int[colorSpace]!, quality, dpi, _addProgressCallback(
       (pass, totalPass, percentage) {
-        if (pass == _PROGRESS_PASS_EXITCODE) {
+        if (pass == _progressPassExitCode) {
           if (percentage != 0) comp.complete(null);
           return;
         }
-        if (pass == PROGRESS_PASS_VECTOR_PTR) {
+        if (pass == _progressPassVectorPointer) {
           comp.complete(MozJpegEncodedResult._(percentage));
           return;
         }
@@ -226,8 +225,8 @@ class MozJpegEncodedResult {
 }
 
 final _cs2int = <MozJpegColorSpace, int>{
-  MozJpegColorSpace.Unknown: 0,
-  MozJpegColorSpace.Grayscale: 1,
+  MozJpegColorSpace.unknown: 0,
+  MozJpegColorSpace.grayscale: 1,
   MozJpegColorSpace.RGB: 2,
   MozJpegColorSpace.YCbCr: 3,
   MozJpegColorSpace.CMYK: 4,
@@ -246,11 +245,15 @@ final _cs2int = <MozJpegColorSpace, int>{
 };
 
 enum MozJpegColorSpace {
-  Unknown,
-  Grayscale,
+  unknown,
+  grayscale,
+  // ignore: constant_identifier_names
   RGB,
+  // ignore: constant_identifier_names
   YCbCr,
+  // ignore: constant_identifier_names
   CMYK,
+  // ignore: constant_identifier_names
   YCCK,
   extRGB,
   extRGBX,
@@ -262,6 +265,7 @@ enum MozJpegColorSpace {
   extBGRA,
   extABGR,
   extARGB,
+  // ignore: constant_identifier_names
   RGB565,
 }
 

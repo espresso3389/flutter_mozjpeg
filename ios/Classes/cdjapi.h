@@ -1,7 +1,9 @@
 #ifndef _cdjapi_h_
 #define _cdjapi_h_
 
-#ifndef RUNTIME_INCLUDE_DART_API_DL_H_
+#if defined(BUILD_FOR_ANDROID)
+#include "dart_api_dl.h"
+#elif !defined(RUNTIME_INCLUDE_DART_API_DL_H_)
 typedef long long cdjapi_int64_t;
 typedef cdjapi_int64_t Dart_Port_DL;
 #endif

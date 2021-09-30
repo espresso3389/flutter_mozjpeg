@@ -2,5 +2,26 @@
     "files.associations": {
         "iosfwd": "cpp",
         "vector": "cpp"
-    }
+    },
+    "C_Cpp.default.configurationProvider": "go2sh.cmake-integration",
+    "cmake.sourceDirectory": "${workspaceFolder}/android",
+    "cSpell.words": [
+        "ABGR",
+        "ARGB",
+        "BGRA",
+        "BGRX",
+        "calloc",
+        "CMYK",
+        "conv",
+        "Grayscale",
+        "jpegtran",
+        "malloc",
+        "mozjpeg",
+        "pubspec",
+        "RGBA",
+        "RGBX",
+        "XBGR",
+        "XRGB",
+        "YCCK"
+    ]
 }

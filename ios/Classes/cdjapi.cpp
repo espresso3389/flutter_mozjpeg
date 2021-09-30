@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 static int64_t dart_port = 0;
 void set_dart_port(int64_t port)

@@ -6,8 +6,6 @@ import 'dart:ui' as ui;
 
 import 'package:flutter_mozjpeg/flutter_mozjpeg.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
 
 void main() {
   runApp(const MyApp());
