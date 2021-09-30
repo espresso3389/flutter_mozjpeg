@@ -22,6 +22,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   _ConversionResult? result;
+  ui.Image? originalImage;
   final textEditingController = TextEditingController();
   final progress = ValueNotifier<List<int>>([0, 0, 0]); // pass, totalPass, percentage
 
@@ -44,38 +45,49 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           title: const Text('Plugin example app'),
         ),
-        body: result != null
-            ? Column(
+        body: Column(
+          children: [
+            InteractiveViewer(
+              child: Stack(
                 children: [
-                  Text('Size: ${result!.inputSize} -> ${result!.outputSize}'),
-                  InteractiveViewer(
-                    child: Stack(
-                      children: [
-                        RawImage(key: Key(result!.file.path), image: result!.image),
-                      ],
-                    ),
-                  ),
-                  SizedBox(
-                    height: 200,
-                    child: TextField(
-                      controller: textEditingController,
-                      keyboardType: TextInputType.multiline,
-                      maxLines: null,
-                      readOnly: true,
-                    ),
-                  ),
+                  RawImage(image: originalImage),
+                  RawImage(image: result?.image),
                 ],
-              )
-            : ValueListenableBuilder<List<int>>(
+              ),
+            ),
+            ValueListenableBuilder<List<int>>(
                 valueListenable: progress,
                 builder: (context, value, child) {
                   return Column(
                     children: [
-                      Text('Pass ${value[0]}/${value[1]}: ${value[2]}%'),
-                      LinearProgressIndicator(value: value[2] / 100),
+                      result == null
+                          ? Text(
+                              'Pass ${value[0].toString().padLeft(3)}/${value[1].toString().padLeft(3)}: ${value[2].toString().padLeft(3)}%',
+                              style: const TextStyle(fontFamily: 'courier'),
+                            )
+                          : Text(
+                              'Size: ${result!.inputSize} -> ${result!.outputSize} (${((result!.outputSize / result!.inputSize) * 100).toStringAsFixed(1)}%)',
+                              style: const TextStyle(fontFamily: 'courier'),
+                            ),
+                      LinearProgressIndicator(
+                        value: value[2] / 100,
+                        minHeight: 5,
+                      ),
                     ],
                   );
                 }),
+            Expanded(
+              child: TextField(
+                controller: textEditingController,
+                keyboardType: TextInputType.multiline,
+                maxLines: null,
+                readOnly: true,
+                expands: true,
+                style: const TextStyle(fontFamily: 'courier'),
+              ),
+            ),
+          ],
+        ),
         floatingActionButton: FloatingActionButton(
           tooltip: 'Pick an Image',
           onPressed: _compressImage,
@@ -89,26 +101,37 @@ class _MyAppState extends State<MyApp> {
     final imageFile = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 2000, maxHeight: 2000);
     if (imageFile == null) return;
 
-    final tmp = await getTemporaryDirectory();
-    final outputImageFile = File(path.join(tmp.path, 'output.jpg'));
-    FlutterMozjpeg.messageCallback = (m) => print('jpegtran: $m');
-    final ret = FlutterMozjpeg.jpegtran(
-      ['-copy', 'none', '-optimize', '-outfile', outputImageFile.path, imageFile.path],
-      progressCallback: (pass, totalPass, percentage) {
-        print('jpegtran: $pass/$totalPass/$percentage');
-        progress.value = [pass, totalPass, percentage];
-      },
-    );
-
     result?.dispose();
     result = null;
+    originalImage = await loadImage(File(imageFile.path));
     if (mounted) {
       setState(() {});
     }
 
-    if (ret == 0) {
+    if (originalImage == null) {
+      return;
+    }
+
+    textEditingController.text = '';
+    FlutterMozjpeg.messageCallback = (m) {
+      if (!mounted) return;
+      textEditingController.text += m;
+    };
+
+    final convResult = await FlutterMozjpeg.jpegCompressImage(
+      originalImage!,
+      progressCallback: (pass, totalPass, percentage) {
+        progress.value = [pass, totalPass, percentage];
+      },
+    );
+
+    if (convResult != null) {
       final prev = result;
-      result = await _ConversionResult.fromFile(outputImageFile, inputSize: await imageFile.length());
+      result = _ConversionResult(
+          image: await convResult.createImage(),
+          inputSize: await imageFile.length(),
+          outputSize: convResult.buffer.lengthInBytes);
+      convResult.dispose();
       prev?.dispose();
       if (mounted) {
         setState(() {});
@@ -117,20 +140,17 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
+Future<ui.Image> loadImage(File file) async {
+  final comp = Completer<ui.Image>();
+  ui.decodeImageFromList(await file.readAsBytes(), (r) => comp.complete(r));
+  return await comp.future;
+}
+
 class _ConversionResult {
-  _ConversionResult({required this.file, required this.image, required this.inputSize, required this.outputSize});
-  final File file;
+  _ConversionResult({required this.image, required this.inputSize, required this.outputSize});
   final ui.Image image;
   final int inputSize;
   final int outputSize;
-
-  static Future<_ConversionResult> fromFile(File file, {required int inputSize}) async {
-    final comp = Completer<_ConversionResult>();
-    ui.decodeImageFromList(await file.readAsBytes(), (r) async {
-      comp.complete(_ConversionResult(file: file, image: r, inputSize: inputSize, outputSize: await file.length()));
-    });
-    return await comp.future;
-  }
 
   void dispose() {
     image.dispose();

@@ -17,11 +17,6 @@
 #include "cdjpeg.h" /* Common decls for cjpeg/djpeg applications */
 #include "cdjapi.h"
 #include <ctype.h> /* to declare isupper(), tolower() */
-#ifdef USE_SETMODE
-#include <fcntl.h> /* to declare setmode()'s parameter macros */
-/* If you have setmode() but not <io.h>, just delete this line: */
-#include <io.h> /* to declare setmode() */
-#endif
 
 /*
  * Optional progress monitor: display a percent-done figure on stderr.
@@ -73,10 +68,11 @@ start_progress_monitor(j_common_ptr cinfo, cd_progress_ptr progress, void *conte
 }
 
 GLOBAL(void)
-end_progress_monitor(j_common_ptr cinfo)
+post_progress_monitor(j_common_ptr cinfo, int pass, int totalPass, size_t percentage)
 {
   cd_progress_ptr progress = (cd_progress_ptr)cinfo->progress;
-  notify_progress(progress->context, -1, -1, -1); // finalization
+  if (progress)
+    notify_progress(progress->context, pass, totalPass, percentage); // finalization
 }
 
 /*
@@ -88,8 +84,8 @@ end_progress_monitor(j_common_ptr cinfo)
 GLOBAL(boolean)
 keymatch(char *arg, const char *keyword, int minchars)
 {
-  register int ca, ck;
-  register int nmatched = 0;
+  int ca, ck;
+  int nmatched = 0;
 
   while ((ca = *arg++) != '\0')
   {
@@ -107,43 +103,26 @@ keymatch(char *arg, const char *keyword, int minchars)
   return TRUE; /* A-OK */
 }
 
-/*
- * Routines to establish binary I/O mode for stdin and stdout.
- * Non-Unix systems often require some hacking to get out of text mode.
- */
-
-GLOBAL(FILE *)
-read_stdin(void)
+static void error_exit(j_common_ptr cinfo)
 {
-  FILE *input_file = stdin;
-
-#ifdef USE_SETMODE /* need to hack file mode? */
-  setmode(fileno(stdin), O_BINARY);
-#endif
-#ifdef USE_FDOPEN /* need to re-open in binary mode? */
-  if ((input_file = fdopen(fileno(stdin), READ_BINARY)) == NULL)
-  {
-    debug_printf("Cannot reopen stdin\n");
-    jt_exit(EXIT_FAILURE);
-  }
-#endif
-  return input_file;
+  (*cinfo->err->output_message)(cinfo);
+  jpeg_destroy(cinfo);
+  jt_exit(EXIT_FAILURE);
 }
 
-GLOBAL(FILE *)
-write_stdout(void)
+static void output_message(j_common_ptr cinfo)
 {
-  FILE *output_file = stdout;
+  char buffer[JMSG_LENGTH_MAX];
+  (*cinfo->err->format_message)(cinfo, buffer);
+  debug_print(buffer);
+}
 
-#ifdef USE_SETMODE /* need to hack file mode? */
-  setmode(fileno(stdout), O_BINARY);
-#endif
-#ifdef USE_FDOPEN /* need to re-open in binary mode? */
-  if ((output_file = fdopen(fileno(stdout), WRITE_BINARY)) == NULL)
-  {
-    debug_printf("Cannot reopen stdout\n");
-    jt_exit(EXIT_FAILURE);
-  }
-#endif
-  return output_file;
+jpeg_error_mgr *debug_foward_error(jpeg_error_mgr *err)
+{
+  jpeg_std_error(err);
+
+  // replaces two vital callbacks
+  err->error_exit = error_exit;
+  err->output_message = output_message;
+  return err;
 }

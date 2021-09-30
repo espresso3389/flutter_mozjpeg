@@ -35,8 +35,12 @@ void debug_printf(const char *format, ...)
         free(buf);
     }
 }
-
 void notify_progress(void *context, int pass, int totalPass, int percentage)
+{
+    notify_progress_v(context, pass, totalPass, (void *)(size_t)percentage);
+}
+
+void notify_progress_v(void *context, int pass, int totalPass, void *address)
 {
     if (!dart_port)
         return;
@@ -47,8 +51,8 @@ void notify_progress(void *context, int pass, int totalPass, int percentage)
     prog[1].value.as_int32 = pass;
     prog[2].type = Dart_CObject_kInt32;
     prog[2].value.as_int32 = totalPass;
-    prog[3].type = Dart_CObject_kInt32;
-    prog[3].value.as_int32 = percentage;
+    prog[3].type = Dart_CObject_kInt64;
+    prog[3].value.as_int64 = (size_t)address;
 
     Dart_CObject *objs[] = {&prog[0], &prog[1], &prog[2], &prog[3]};
     Dart_CObject arr;
@@ -56,4 +60,9 @@ void notify_progress(void *context, int pass, int totalPass, int percentage)
     arr.value.as_array.length = 4;
     arr.value.as_array.values = objs;
     Dart_PostCObject_DL(dart_port, &arr);
+}
+
+void jt_exit(int code)
+{
+    throw code;
 }

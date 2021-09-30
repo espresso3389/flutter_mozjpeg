@@ -153,11 +153,22 @@ extern "C"
   /* common support routines (in cdjpeg.c) */
 
   EXTERN(void)
-  start_progress_monitor(j_common_ptr cinfo,
-                         cd_progress_ptr progress,
-                         void *context);
+  start_progress_monitor(j_common_ptr cinfo, cd_progress_ptr progress, void *context);
   EXTERN(void)
-  end_progress_monitor(j_common_ptr cinfo);
+  post_progress_monitor(j_common_ptr cinfo, int pass, int totalPass, size_t percentage);
+
+  enum
+  {
+    // Special pass values for post_progress_monitor
+    PROGRESS_PASS_EXITCODE = -1,
+    PROGRESS_PASS_OUTPUT_FILESIZE = -2,
+    PROGRESS_PASS_VECTOR_PTR = -3,
+    // Special totalPass values to indicate the result status used with PROGRESS_PASS_OUTPUT_FILESIZE
+    // e.g. post_progress_monitor(cinfo, PROGRESS_PASS_OUTPUT_FILESIZE, PROGRESS_TPASS_OPTIMIZED, size);
+    PROGRESS_TPASS_OPTIMIZED = 1,
+    PROGRESS_TPASS_ORIGINAL = 2,
+  };
+
   EXTERN(boolean)
   keymatch(char *arg, const char *keyword, int minchars);
   EXTERN(FILE *)
@@ -191,3 +202,5 @@ extern "C"
 #if defined(__cplusplus)
 }
 #endif
+
+jpeg_error_mgr *debug_foward_error(jpeg_error_mgr *err);

@@ -15,6 +15,7 @@ extern "C"
     void debug_print(const char *message);
     void debug_printf(const char *format, ...);
     void notify_progress(void *context, int pass, int totalPass, int percentage);
+    void notify_progress_v(void *context, int pass, int totalPass, void *address);
     void jt_exit(int code);
 
 #if defined(__cplusplus)
