@@ -64,7 +64,7 @@ class _MyAppState extends State<MyApp> {
                               style: const TextStyle(fontFamily: 'courier'),
                             )
                           : Text(
-                              'Size: ${result!.inputSize} -> ${result!.outputSize} (${((result!.outputSize / result!.inputSize) * 100).toStringAsFixed(1)}%)',
+                              'Size: ${result!.inputSize} -> ${result!.outputSize} (${((result!.outputSize / result!.inputSize) * 100).toStringAsFixed(1)}%) in ${result!.time}',
                               style: const TextStyle(fontFamily: 'courier'),
                             ),
                       LinearProgressIndicator(
@@ -116,6 +116,9 @@ class _MyAppState extends State<MyApp> {
       textEditingController.text += m;
     };
 
+    final sw = Stopwatch();
+    sw.start();
+
     final convResult = await FlutterMozjpeg.jpegCompressImage(
       originalImage!,
       progressCallback: (pass, totalPass, percentage) {
@@ -123,12 +126,15 @@ class _MyAppState extends State<MyApp> {
       },
     );
 
+    sw.stop();
+
     if (convResult != null) {
       final prev = result;
       result = _ConversionResult(
           image: await convResult.createImage(),
           inputSize: await imageFile.length(),
-          outputSize: convResult.buffer.lengthInBytes);
+          outputSize: convResult.buffer.lengthInBytes,
+          time: sw.elapsed);
       convResult.dispose();
       prev?.dispose();
       if (mounted) {
@@ -145,10 +151,11 @@ Future<ui.Image> loadImage(File file) async {
 }
 
 class _ConversionResult {
-  _ConversionResult({required this.image, required this.inputSize, required this.outputSize});
+  _ConversionResult({required this.image, required this.inputSize, required this.outputSize, required this.time});
   final ui.Image image;
   final int inputSize;
   final int outputSize;
+  final Duration time;
 
   void dispose() {
     image.dispose();
