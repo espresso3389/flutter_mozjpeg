@@ -4,10 +4,9 @@ A Flutter wrapper for mozjpeg.
 
 ## Getting Started
 
-
 ## iOS
 
-The pod `mozjpeg` must be redirected to my own fork just now. Add the following line to your `ios/Podfile`:
+The pod `mozjpeg` must be redirected to [my own fork](https://github.com/espresso3389/mozjpeg) just now. Add the following line to your `ios/Podfile`:
 
 ```
 pod 'mozjpeg', :git => "https://github.com/espresso3389/mozjpeg.git"
@@ -30,3 +29,17 @@ end
 ...
 ```
 
+## Android
+
+Nothing to do.
+
+
+## Example
+
+```dart
+import 'package:flutter_mozjpeg/flutter_mozjpeg.dart';
+
+...
+
+await FlutterMozjpeg.jpegCompressFileToFile(File('input.jpg'), File('output.jpg'));
+```

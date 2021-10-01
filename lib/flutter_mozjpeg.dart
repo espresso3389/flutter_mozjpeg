@@ -12,16 +12,14 @@ import 'dart:ui' as ui;
 
 import 'package:ffi/ffi.dart';
 
-typedef Dart_InitializeApiDLFunc = Pointer<Void> Function(Pointer<Void>);
+typedef _Dart_InitializeApiDLFunc = Pointer<Void> Function(Pointer<Void>);
+typedef _JpegCompressFunc = void Function(Pointer<Uint8>, int, int, int, int, int, int, int);
+typedef _SetDartPortFunc = void Function(int port);
 
 typedef MessageCallback = void Function(String);
+
+/// Progress callback receives [pass], [totalPass] and the progress [percentage] (%) on the pass.
 typedef ProgressCallback = void Function(int pass, int totalPass, int percentage);
-
-typedef _MainTypeFunc = int Function(int argc, Pointer<Pointer<Utf8>> argv, int context);
-
-typedef _JpegCompressFunc = void Function(Pointer<Uint8>, int, int, int, int, int, int, int);
-
-typedef _SetDartPortFunc = void Function(int port);
 
 /// A Flutter wrapper of Mozilla JPEG Encoder ([mozjpeg](https://github.com/mozilla/mozjpeg)).
 abstract class FlutterMozjpeg {
@@ -31,8 +29,8 @@ abstract class FlutterMozjpeg {
   /// [How to use async callback between C++ and Dart with FFI?](https://github.com/flutter/flutter/issues/63255)
   /// - Copy dart-sdk's header/impl. files and call `Dart_InitializeApiDL` with [NativeApi.initializeApiDLData](https://api.flutter.dev/flutter/dart-ffi/NativeApi/initializeApiDLData.html).
   // ignore: non_constant_identifier_names
-  static final Dart_InitializeApiDLFunc _Dart_InitializeApiDL =
-      mozJpegLib.lookup<NativeFunction<Dart_InitializeApiDLFunc>>("Dart_InitializeApiDL").asFunction();
+  static final _Dart_InitializeApiDLFunc _Dart_InitializeApiDL =
+      mozJpegLib.lookup<NativeFunction<_Dart_InitializeApiDLFunc>>("Dart_InitializeApiDL").asFunction();
 
   /// Call to C++ implemented routine `set_dart_port`.
   static final _SetDartPortFunc _setDartPort =
@@ -85,57 +83,6 @@ abstract class FlutterMozjpeg {
     return context;
   }
 
-  static final _MainTypeFunc _jpegtran = mozJpegLib
-      .lookup<NativeFunction<Int32 Function(Int32, Pointer<Pointer<Utf8>>, IntPtr)>>("jpegtran_threaded")
-      .asFunction();
-
-  static int _callMain(
-    _MainTypeFunc func,
-    List<String> args,
-    String exeName,
-    int context,
-  ) {
-    _ensureDartApiInitialized();
-
-    final argv = calloc.allocate<Pointer<Utf8>>((args.length + 2) * sizeOf<Pointer<Utf8>>());
-    try {
-      argv[0] = exeName.toNativeUtf8();
-      for (int i = 0; i < args.length; i++) {
-        argv[i + 1] = args[i].toNativeUtf8();
-      }
-
-      return func(
-        args.length + 1,
-        argv,
-        context,
-      );
-    } finally {
-      for (int i = 0; i <= args.length; i++) {
-        malloc.free(argv[i]);
-      }
-      calloc.free(argv);
-    }
-  }
-
-  /// Execute `jpegtran` process with [args].
-  /// It returns 0 if succeeded; other value indicates some error.
-  /// The last parameter can be `@buffer@:address,size` to do conversion on memory. In that case, the return
-  /// value is the resulting JPEG size on the buffer.
-  static Future<int> jpegtran(
-    List<String> args, {
-    ProgressCallback? progressCallback,
-  }) async {
-    final comp = Completer<int>();
-    _callMain(_jpegtran, args, "jpegtran", _addProgressCallback((pass, totalPass, percentage) {
-      if (pass == _progressPassExitCode || pass == _progressPassOutputFileSize) {
-        comp.complete(percentage);
-        return;
-      }
-      progressCallback?.call(pass, totalPass, percentage);
-    }));
-    return await comp.future;
-  }
-
   static final _JpegCompressFunc _jpegCompress = mozJpegLib
       .lookup<NativeFunction<Void Function(Pointer<Uint8>, Int32, Int32, Int32, Int32, Int32, Int32, IntPtr)>>(
           "jpeg_compress_threaded")
@@ -147,6 +94,12 @@ abstract class FlutterMozjpeg {
   static final void Function(int) _jpegCompressRelease =
       mozJpegLib.lookup<NativeFunction<Void Function(IntPtr)>>("jpeg_compress_release").asFunction();
 
+  /// Compress the raw image data on memory.
+  /// [stride], a.k.a. bytes-per-line, is depending on the pixel layout but if the data is RGBA,
+  /// it is typically `width * 4` unless any trailing padding bytes.
+  /// [quality] is JPEG compression quality in [0 - 100]; the default is 75.
+  /// [dpi] is just an additional metadata, dot-per-inch; the default us 96.
+  /// [progressCallback] receives progress percentage during the conversion.
   static Future<MozJpegEncodedResult?> jpegCompress(
     Pointer<Uint8> src,
     int width,
@@ -176,6 +129,9 @@ abstract class FlutterMozjpeg {
     return await comp.future;
   }
 
+  /// [quality] is JPEG compression quality in [0 - 100]; the default is 75.
+  /// [dpi] is just an additional metadata, dot-per-inch; the default us 96.
+  /// [progressCallback] receives progress percentage during the conversion.
   static Future<MozJpegEncodedResult?> jpegCompressImage(
     ui.Image image, {
     int quality = 75,
@@ -188,6 +144,9 @@ abstract class FlutterMozjpeg {
         progressCallback: progressCallback,
       );
 
+  /// [quality] is JPEG compression quality in [0 - 100]; the default is 75.
+  /// [dpi] is just an additional metadata, dot-per-inch; the default us 96.
+  /// [progressCallback] receives progress percentage during the conversion.
   static Future<MozJpegEncodedResult?> jpegCompressFileBytes(
     Uint8List fileBytes, {
     int quality = 75,
@@ -202,6 +161,9 @@ abstract class FlutterMozjpeg {
     );
   }
 
+  /// [quality] is JPEG compression quality in [0 - 100]; the default is 75.
+  /// [dpi] is just an additional metadata, dot-per-inch; the default us 96.
+  /// [progressCallback] receives progress percentage during the conversion.
   static Future<MozJpegEncodedResult?> jpegCompressFile(
     File file, {
     int quality = 75,
@@ -215,6 +177,12 @@ abstract class FlutterMozjpeg {
         progressCallback: progressCallback,
       );
 
+  /// Compress the raw RGBA image data on memory.
+  /// [stride], a.k.a. bytes-per-line, is depending on the pixel layout but if the data is RGBA,
+  /// it is typically `width * 4` unless any trailing padding bytes.
+  /// [quality] is JPEG compression quality in [0 - 100]; the default is 75.
+  /// [dpi] is just an additional metadata, dot-per-inch; the default us 96.
+  /// [progressCallback] receives progress percentage during the conversion.
   static Future<MozJpegEncodedResult?> jpegCompressRgbaBytes(
     Uint8List rgba,
     int width,
@@ -241,23 +209,76 @@ abstract class FlutterMozjpeg {
           progressCallback: progressCallback,
         );
       });
+
+  /// [quality] is JPEG compression quality in [0 - 100]; the default is 75.
+  /// [dpi] is just an additional metadata, dot-per-inch; the default us 96.
+  /// [progressCallback] receives progress percentage during the conversion.
+  static Future<bool> jpegCompressFileBytesToFile(
+    Uint8List fileBytes,
+    File output, {
+    int quality = 75,
+    int dpi = 96,
+    ProgressCallback? progressCallback,
+  }) async {
+    final result = await jpegCompressFileBytes(
+      fileBytes,
+      quality: quality,
+      dpi: dpi,
+      progressCallback: progressCallback,
+    );
+    if (result == null) return false;
+    try {
+      await result.save(output);
+      return true;
+    } catch (e) {
+      return false;
+    } finally {
+      result.dispose();
+    }
+  }
+
+  /// [quality] is JPEG compression quality in [0 - 100]; the default is 75.
+  /// [dpi] is just an additional metadata, dot-per-inch; the default us 96.
+  /// [progressCallback] receives progress percentage during the conversion.
+  static Future<bool> jpegCompressFileToFile(
+    File input,
+    File output, {
+    int quality = 75,
+    int dpi = 96,
+    ProgressCallback? progressCallback,
+  }) async {
+    return jpegCompressFileBytesToFile(
+      await input.readAsBytes(),
+      output,
+      quality: quality,
+      dpi: dpi,
+      progressCallback: progressCallback,
+    );
+  }
 }
 
-/// You must dispose the instance after use it.
+/// JPEG compression result.
+/// You must call [dispose] after using it.
 class MozJpegEncodedResult {
   int? _vectorAddress;
   MozJpegEncodedResult._(this._vectorAddress);
 
+  /// Buffer that contains the compressed result.
   Uint8List get buffer => pointer.asTypedList(size);
 
+  /// Pointer to the buffer that contains the compressed result.
   Pointer<Uint8> get pointer => FlutterMozjpeg._jpegCompressGetPtr(_vectorAddress!);
 
+  /// Size in bytes of the compressed result.
   int get size => FlutterMozjpeg._jpegCompressGetSize(_vectorAddress!);
 
+  /// Save the compressed result JPEG data to file.
   Future<void> save(File file) => file.writeAsBytes(buffer);
 
+  /// Create image object from the compressed result.
   Future<ui.Image> createImage() => loadImageFromBytes(buffer);
 
+  /// Release the resources used by the object.
   void dispose() {
     FlutterMozjpeg._jpegCompressRelease(_vectorAddress!);
     _vectorAddress = null;
@@ -284,6 +305,7 @@ final _cs2int = <MozJpegColorSpace, int>{
   MozJpegColorSpace.RGB565: 16
 };
 
+/// Input color space and pixel layout.
 enum MozJpegColorSpace {
   unknown,
   grayscale,
