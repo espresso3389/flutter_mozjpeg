@@ -23,6 +23,7 @@ A new flutter plugin project.
                            'Classes/cdjpeg.h'
 
   s.public_header_files = 'Classes/cdjapi.h'
+  s.compiler_flags = '-Wno-strict-prototypes'
   s.dependency 'Flutter'
   s.dependency 'mozjpeg', '~> 4.0.3'
   s.platform = :ios, '11.0'
@@ -30,8 +31,4 @@ A new flutter plugin project.
   # Flutter.framework does not contain a i386 slice.
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }
   s.swift_version = '5.0'
-  # Workaround for error: Include of non-modular header inside framework module 'xxxxx'
-  # s.xcconfig = {
-  #   'CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES' => 'YES'
-  # }
 end
