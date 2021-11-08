@@ -1,8 +1,3 @@
-// You have generated a new plugin project without
-// specifying the `--platforms` flag. A plugin project supports no platforms is generated.
-// To add platforms, run `flutter create -t plugin --platforms <platforms> .` under the same
-// directory. You can also find a detailed instruction on how to add platforms in the `pubspec.yaml` at https://flutter.dev/docs/development/packages-and-plugins/developing-packages#plugin-platforms.
-
 import 'dart:async';
 import 'dart:ffi';
 import 'dart:io';
@@ -95,10 +90,10 @@ abstract class FlutterMozjpeg {
       mozJpegLib.lookup<NativeFunction<Void Function(IntPtr)>>("jpeg_compress_release").asFunction();
 
   /// Compress the raw image data on memory.
-  /// [stride], a.k.a. bytes-per-line, is depending on the pixel layout but if the data is RGBA,
-  /// it is typically `width * 4` unless any trailing padding bytes.
+  /// [stride], a.k.a. bytes-per-line, is depending on the pixel layout. If the data is RGBA,
+  /// [stride] is typically `width * 4` unless there are any trailing padding bytes.
   /// [quality] is JPEG compression quality in [0 - 100]; the default is 75.
-  /// [dpi] is just an additional metadata, dot-per-inch; the default us 96.
+  /// [dpi] is just an additional metadata, dot-per-inch; the default is 96.
   /// [progressCallback] receives progress percentage during the conversion.
   static Future<MozJpegEncodedResult?> jpegCompress(
     Pointer<Uint8> src,
@@ -130,7 +125,7 @@ abstract class FlutterMozjpeg {
   }
 
   /// [quality] is JPEG compression quality in [0 - 100]; the default is 75.
-  /// [dpi] is just an additional metadata, dot-per-inch; the default us 96.
+  /// [dpi] is just an additional metadata, dot-per-inch; the default is 96.
   /// [progressCallback] receives progress percentage during the conversion.
   static Future<MozJpegEncodedResult?> jpegCompressImage(
     ui.Image image, {
@@ -145,7 +140,7 @@ abstract class FlutterMozjpeg {
       );
 
   /// [quality] is JPEG compression quality in [0 - 100]; the default is 75.
-  /// [dpi] is just an additional metadata, dot-per-inch; the default us 96.
+  /// [dpi] is just an additional metadata, dot-per-inch; the default is 96.
   /// [progressCallback] receives progress percentage during the conversion.
   static Future<MozJpegEncodedResult?> jpegCompressFileBytes(
     Uint8List fileBytes, {
@@ -162,7 +157,7 @@ abstract class FlutterMozjpeg {
   }
 
   /// [quality] is JPEG compression quality in [0 - 100]; the default is 75.
-  /// [dpi] is just an additional metadata, dot-per-inch; the default us 96.
+  /// [dpi] is just an additional metadata, dot-per-inch; the default is 96.
   /// [progressCallback] receives progress percentage during the conversion.
   static Future<MozJpegEncodedResult?> jpegCompressFile(
     File file, {
@@ -178,10 +173,10 @@ abstract class FlutterMozjpeg {
       );
 
   /// Compress the raw RGBA image data on memory.
-  /// [stride], a.k.a. bytes-per-line, is depending on the pixel layout but if the data is RGBA,
-  /// it is typically `width * 4` unless any trailing padding bytes.
+  /// [stride], a.k.a. bytes-per-line, is depending on the pixel layout. If the data is RGBA,
+  /// [stride] is typically `width * 4` unless there are any trailing padding bytes.
   /// [quality] is JPEG compression quality in [0 - 100]; the default is 75.
-  /// [dpi] is just an additional metadata, dot-per-inch; the default us 96.
+  /// [dpi] is just an additional metadata, dot-per-inch; the default is 96.
   /// [progressCallback] receives progress percentage during the conversion.
   static Future<MozJpegEncodedResult?> jpegCompressRgbaBytes(
     Uint8List rgba,
@@ -211,7 +206,7 @@ abstract class FlutterMozjpeg {
       });
 
   /// [quality] is JPEG compression quality in [0 - 100]; the default is 75.
-  /// [dpi] is just an additional metadata, dot-per-inch; the default us 96.
+  /// [dpi] is just an additional metadata, dot-per-inch; the default is 96.
   /// [progressCallback] receives progress percentage during the conversion.
   static Future<bool> jpegCompressFileBytesToFile(
     Uint8List fileBytes,
@@ -238,7 +233,7 @@ abstract class FlutterMozjpeg {
   }
 
   /// [quality] is JPEG compression quality in [0 - 100]; the default is 75.
-  /// [dpi] is just an additional metadata, dot-per-inch; the default us 96.
+  /// [dpi] is just an additional metadata, dot-per-inch; the default is 96.
   /// [progressCallback] receives progress percentage during the conversion.
   static Future<bool> jpegCompressFileToFile(
     File input,
