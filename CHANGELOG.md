@@ -1,3 +1,7 @@
+## 0.0.3
+
+* Upgrade dependencies
+
 ## 0.0.2
 
 * Add -DCMAKE_INSTALL_PREFIX for external CMake invocation (fix for Android build failure on macOS)

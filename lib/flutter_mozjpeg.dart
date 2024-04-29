@@ -8,28 +8,33 @@ import 'dart:ui' as ui;
 import 'package:ffi/ffi.dart';
 
 typedef _Dart_InitializeApiDLFunc = Pointer<Void> Function(Pointer<Void>);
-typedef _JpegCompressFunc = void Function(Pointer<Uint8>, int, int, int, int, int, int, int);
+typedef _JpegCompressFunc = void Function(
+    Pointer<Uint8>, int, int, int, int, int, int, int);
 typedef _SetDartPortFunc = void Function(int port);
 
 typedef MessageCallback = void Function(String);
 
 /// Progress callback receives [pass], [totalPass] and the progress [percentage] (%) on the pass.
-typedef ProgressCallback = void Function(int pass, int totalPass, int percentage);
+typedef ProgressCallback = void Function(
+    int pass, int totalPass, int percentage);
 
 /// A Flutter wrapper of Mozilla JPEG Encoder ([mozjpeg](https://github.com/mozilla/mozjpeg)).
 abstract class FlutterMozjpeg {
-  static final mozJpegLib =
-      Platform.isAndroid ? DynamicLibrary.open("libflutter_mozjpeg.so") : DynamicLibrary.process();
+  static final mozJpegLib = Platform.isAndroid
+      ? DynamicLibrary.open("libflutter_mozjpeg.so")
+      : DynamicLibrary.process();
 
   /// [How to use async callback between C++ and Dart with FFI?](https://github.com/flutter/flutter/issues/63255)
   /// - Copy dart-sdk's header/impl. files and call `Dart_InitializeApiDL` with [NativeApi.initializeApiDLData](https://api.flutter.dev/flutter/dart-ffi/NativeApi/initializeApiDLData.html).
   // ignore: non_constant_identifier_names
-  static final _Dart_InitializeApiDLFunc _Dart_InitializeApiDL =
-      mozJpegLib.lookup<NativeFunction<_Dart_InitializeApiDLFunc>>("Dart_InitializeApiDL").asFunction();
+  static final _Dart_InitializeApiDLFunc _Dart_InitializeApiDL = mozJpegLib
+      .lookup<NativeFunction<_Dart_InitializeApiDLFunc>>("Dart_InitializeApiDL")
+      .asFunction();
 
   /// Call to C++ implemented routine `set_dart_port`.
-  static final _SetDartPortFunc _setDartPort =
-      mozJpegLib.lookup<NativeFunction<Void Function(Int64)>>("set_dart_port").asFunction();
+  static final _SetDartPortFunc _setDartPort = mozJpegLib
+      .lookup<NativeFunction<Void Function(Int64)>>("set_dart_port")
+      .asFunction();
 
   static Pointer<Void>? cookie;
 
@@ -53,7 +58,8 @@ abstract class FlutterMozjpeg {
           int context = message[0] as int;
           int pass = message[1] as int;
           // lookup progress callback associated to the context value and invoke it with the parameters
-          _progressCallbacks[context]?.call(pass, message[2] as int, message[3] as int);
+          _progressCallbacks[context]
+              ?.call(pass, message[2] as int, message[3] as int);
           if (pass == _progressPassExitCode) {
             _progressCallbacks.remove(context);
           }
@@ -79,15 +85,21 @@ abstract class FlutterMozjpeg {
   }
 
   static final _JpegCompressFunc _jpegCompress = mozJpegLib
-      .lookup<NativeFunction<Void Function(Pointer<Uint8>, Int32, Int32, Int32, Int32, Int32, Int32, IntPtr)>>(
-          "jpeg_compress_threaded")
+      .lookup<
+          NativeFunction<
+              Void Function(Pointer<Uint8>, Int32, Int32, Int32, Int32, Int32,
+                  Int32, IntPtr)>>("jpeg_compress_threaded")
       .asFunction();
-  static final Pointer<Uint8> Function(int) _jpegCompressGetPtr =
-      mozJpegLib.lookup<NativeFunction<Pointer<Uint8> Function(IntPtr)>>("jpeg_compress_get_ptr").asFunction();
-  static final int Function(int) _jpegCompressGetSize =
-      mozJpegLib.lookup<NativeFunction<IntPtr Function(IntPtr)>>("jpeg_compress_get_size").asFunction();
-  static final void Function(int) _jpegCompressRelease =
-      mozJpegLib.lookup<NativeFunction<Void Function(IntPtr)>>("jpeg_compress_release").asFunction();
+  static final Pointer<Uint8> Function(int) _jpegCompressGetPtr = mozJpegLib
+      .lookup<NativeFunction<Pointer<Uint8> Function(IntPtr)>>(
+          "jpeg_compress_get_ptr")
+      .asFunction();
+  static final int Function(int) _jpegCompressGetSize = mozJpegLib
+      .lookup<NativeFunction<IntPtr Function(IntPtr)>>("jpeg_compress_get_size")
+      .asFunction();
+  static final void Function(int) _jpegCompressRelease = mozJpegLib
+      .lookup<NativeFunction<Void Function(IntPtr)>>("jpeg_compress_release")
+      .asFunction();
 
   /// Compress the raw image data on memory.
   /// [stride], a.k.a. bytes-per-line, is depending on the pixel layout. If the data is RGBA,
@@ -107,7 +119,9 @@ abstract class FlutterMozjpeg {
   }) async {
     _ensureDartApiInitialized();
     final comp = Completer<MozJpegEncodedResult?>();
-    _jpegCompress(src, width, height, stride, _cs2int[colorSpace]!, quality, dpi, _addProgressCallback(
+    _jpegCompress(
+        src, width, height, stride, _cs2int[colorSpace]!, quality, dpi,
+        _addProgressCallback(
       (pass, totalPass, percentage) {
         if (pass == _progressPassExitCode) {
           if (percentage != 0) comp.complete(null);
@@ -262,7 +276,8 @@ class MozJpegEncodedResult {
   Uint8List get buffer => pointer.asTypedList(size);
 
   /// Pointer to the buffer that contains the compressed result.
-  Pointer<Uint8> get pointer => FlutterMozjpeg._jpegCompressGetPtr(_vectorAddress!);
+  Pointer<Uint8> get pointer =>
+      FlutterMozjpeg._jpegCompressGetPtr(_vectorAddress!);
 
   /// Size in bytes of the compressed result.
   int get size => FlutterMozjpeg._jpegCompressGetSize(_vectorAddress!);

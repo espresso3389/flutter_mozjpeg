@@ -1,45 +1,46 @@
 PODS:
   - Flutter (1.0.0)
-  - flutter_mozjpeg (0.0.1):
+  - flutter_mozjpeg (0.0.2):
     - Flutter
     - mozjpeg (~> 4.0.3)
-  - image_picker (0.0.1):
+  - image_picker_ios (0.0.1):
     - Flutter
   - mozjpeg (4.0.3)
-  - path_provider (0.0.1):
+  - path_provider_foundation (0.0.1):
     - Flutter
+    - FlutterMacOS
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
   - flutter_mozjpeg (from `.symlinks/plugins/flutter_mozjpeg/ios`)
-  - image_picker (from `.symlinks/plugins/image_picker/ios`)
+  - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - mozjpeg (from `https://github.com/espresso3389/mozjpeg.git`)
-  - path_provider (from `.symlinks/plugins/path_provider/ios`)
+  - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
 
 EXTERNAL SOURCES:
   Flutter:
     :path: Flutter
   flutter_mozjpeg:
     :path: ".symlinks/plugins/flutter_mozjpeg/ios"
-  image_picker:
-    :path: ".symlinks/plugins/image_picker/ios"
+  image_picker_ios:
+    :path: ".symlinks/plugins/image_picker_ios/ios"
   mozjpeg:
     :git: https://github.com/espresso3389/mozjpeg.git
-  path_provider:
-    :path: ".symlinks/plugins/path_provider/ios"
+  path_provider_foundation:
+    :path: ".symlinks/plugins/path_provider_foundation/darwin"
 
 CHECKOUT OPTIONS:
   mozjpeg:
-    :commit: 07f0346b3dac5a02e92194530deb2d49bbb397ff
+    :commit: 656d4fe8aa5aaddbc837d599c3cb557410d367cd
     :git: https://github.com/espresso3389/mozjpeg.git
 
 SPEC CHECKSUMS:
-  Flutter: 50d75fe2f02b26cc09d224853bb45737f8b3214a
-  flutter_mozjpeg: 5e9f9d0d2589c25037c0f4d7da7ec77820f61c75
-  image_picker: 9aa50e1d8cdacdbed739e925b7eea16d014367e6
+  Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
+  flutter_mozjpeg: 432fcd3313ec9253d21c862a5ac0f26c534b671b
+  image_picker_ios: b545a5f16c0fa88e3ecbbce3ed4de45567a8ec18
   mozjpeg: 4b5dda613b858b64c3a00385f67850f24fbafbd2
-  path_provider: d1e9807085df1f9cc9318206cd649dc0b76be3de
+  path_provider_foundation: 3784922295ac71e43754bd15e0653ccfd36a147c
 
-PODFILE CHECKSUM: 59de06ea9561295370fc0f6c67286a8d840df32d
+PODFILE CHECKSUM: 49bf96b1358e8898d2c45a3794eaae66b7584952
 
-COCOAPODS: 1.10.2
+COCOAPODS: 1.15.2
