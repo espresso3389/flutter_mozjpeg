@@ -1,3 +1,7 @@
+## 0.0.4
+
+* Upgrade Android build configurations
+
 ## 0.0.3
 
 * Upgrade dependencies
