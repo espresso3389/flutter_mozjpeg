@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 static int64_t dart_port = 0;
-void set_dart_port(int64_t port)
+CDJAPI_EXPORT void CDJAPI_INTEROP_API set_dart_port(int64_t port)
 {
     dart_port = port;
 }
@@ -28,7 +28,16 @@ void debug_printf(const char *format, ...)
     va_list ap;
     va_start(ap, format);
     char *buf = NULL;
+#if defined(_WIN32)
+    int length = _vscprintf(format, ap);
+    buf = (char *)calloc(length + 1, 1);
+    if (buf)
+    {
+        vsnprintf(buf, length + 1, format, ap);
+    }
+#else
     vasprintf(&buf, format, ap);
+#endif
     va_end(ap);
     if (buf)
     {
@@ -63,7 +72,7 @@ void notify_progress_v(void *context, int pass, int totalPass, void *address)
     Dart_PostCObject_DL(dart_port, &arr);
 }
 
-void jt_exit(int code)
-{
-    throw code;
-}
+// void jt_exit(int code)
+// {
+//     throw code;
+// }

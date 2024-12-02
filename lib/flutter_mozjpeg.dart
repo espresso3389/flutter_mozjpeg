@@ -20,9 +20,20 @@ typedef ProgressCallback = void Function(
 
 /// A Flutter wrapper of Mozilla JPEG Encoder ([mozjpeg](https://github.com/mozilla/mozjpeg)).
 abstract class FlutterMozjpeg {
-  static final mozJpegLib = Platform.isAndroid
-      ? DynamicLibrary.open("libflutter_mozjpeg.so")
-      : DynamicLibrary.process();
+  static final mozJpegLib = _load();
+
+  static DynamicLibrary _load() {
+    switch (Platform.operatingSystem) {
+      case 'android':
+        return DynamicLibrary.open("libflutter_mozjpeg.so");
+      case 'ios':
+        return DynamicLibrary.process();
+      case 'windows':
+        return DynamicLibrary.open("flutter_mozjpeg_plugin.dll");
+      default:
+        throw UnsupportedError('Unsupported platform');
+    }
+  }
 
   /// [How to use async callback between C++ and Dart with FFI?](https://github.com/flutter/flutter/issues/63255)
   /// - Copy dart-sdk's header/impl. files and call `Dart_InitializeApiDL` with [NativeApi.initializeApiDLData](https://api.flutter.dev/flutter/dart-ffi/NativeApi/initializeApiDLData.html).

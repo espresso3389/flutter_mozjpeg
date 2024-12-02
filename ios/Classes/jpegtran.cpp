@@ -20,15 +20,26 @@
 #include "jconfigint.h"
 #include "transupp.h" /* Support routines for jpegtran */
 
+#if !defined(_WIN32)
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#define _fileno(fp) fileno(fp)
+#endif
 
 #include <string>
 #include <vector>
 #include <memory>
 
 #include "vector_dest_mgr.h"
+
+#if defined(_WIN32)
+#define JPEGTRAN_EXPORT __declspec(dllexport)
+#define JPEGTRAN_INTEROP_API __stdcall
+#else
+#define JPEGTRAN_EXPORT __attribute__((visibility("default"))) __attribute__((used))
+#define JPEGTRAN_INTEROP_API
+#endif
 
 class JpegTran
 {
@@ -140,10 +151,10 @@ public:
         }
     }
 
-    size_t parse_switches(j_compress_ptr cinfo, size_t argc, char **argv,
+    size_t parse_switches(j_compress_ptr cinfo, size_t argc, char **_argv,
                           int last_file_arg_seen, boolean for_real)
     /* Parse optional switches.
- * Returns argv[] index of first file-name argument (== argc if none).
+ * Returns _argv[] index of first file-name argument (== argc if none).
  * Any file names with indexes <= last_file_arg_seen are ignored;
  * they have presumably been processed in a previous iteration.
  * (Pass 0 for last_file_arg_seen on the first or only iteration.)
@@ -157,7 +168,7 @@ public:
         char *arg;
         for (argn = 1; argn < argc; argn++)
         {
-            arg = argv[argn];
+            arg = _argv[argn];
             if (*arg != '-')
             {
                 /* Not a switch, must be a file name argument */
@@ -175,15 +186,15 @@ public:
                 /* Select which extra markers to copy. */
                 if (++argn >= argc) /* advance to next argument */
                     usage();
-                if (keymatch(argv[argn], "none", 1))
+                if (keymatch(_argv[argn], "none", 1))
                 {
                     copyoption = JCOPYOPT_NONE;
                 }
-                else if (keymatch(argv[argn], "comments", 1))
+                else if (keymatch(_argv[argn], "comments", 1))
                 {
                     copyoption = JCOPYOPT_COMMENTS;
                 }
-                else if (keymatch(argv[argn], "all", 1))
+                else if (keymatch(_argv[argn], "all", 1))
                 {
                     copyoption = JCOPYOPT_ALL;
                 }
@@ -196,10 +207,10 @@ public:
                 if (++argn >= argc) /* advance to next argument */
                     usage();
                 if (transformoption.crop /* reject multiple crop/drop/wipe requests */ ||
-                    !jtransform_parse_crop_spec(&transformoption, argv[argn]))
+                    !jtransform_parse_crop_spec(&transformoption, _argv[argn]))
                 {
                     debug_printf("%s: bogus -crop argument '%s'\n",
-                                 progname, argv[argn]);
+                                 progname, _argv[argn]);
                     jt_exit(EXIT_FAILURE);
                 }
                 prefer_smallest = FALSE;
@@ -232,9 +243,9 @@ public:
                 /* Mirror left-right or top-bottom. */
                 if (++argn >= argc) /* advance to next argument */
                     usage();
-                if (keymatch(argv[argn], "horizontal", 1))
+                if (keymatch(_argv[argn], "horizontal", 1))
                     select_transform(JXFORM_FLIP_H);
-                else if (keymatch(argv[argn], "vertical", 1))
+                else if (keymatch(_argv[argn], "vertical", 1))
                     select_transform(JXFORM_FLIP_V);
                 else
                     usage();
@@ -259,7 +270,7 @@ public:
 
                 if (++argn >= argc) /* advance to next argument */
                     usage();
-                if (sscanf(argv[argn], "%ld%c", &lval, &ch) < 1)
+                if (sscanf(_argv[argn], "%ld%c", &lval, &ch) < 1)
                     usage();
                 if (ch == 'm' || ch == 'M')
                     lval *= 1000L;
@@ -275,7 +286,7 @@ public:
                 /* Set output file name. */
                 if (++argn >= argc) /* advance to next argument */
                     usage();
-                outfilename = argv[argn]; /* save it away for later use */
+                outfilename = _argv[argn]; /* save it away for later use */
             }
             else if (keymatch(arg, "perfect", 2))
             {
@@ -298,7 +309,7 @@ public:
 
                 if (++argn >= argc) /* advance to next argument */
                     usage();
-                if (sscanf(argv[argn], "%ld%c", &lval, &ch) < 1)
+                if (sscanf(_argv[argn], "%ld%c", &lval, &ch) < 1)
                     usage();
                 if (lval < 0 || lval > 65535L)
                     usage();
@@ -324,11 +335,11 @@ public:
                 /* Rotate 90, 180, or 270 degrees (measured clockwise). */
                 if (++argn >= argc) /* advance to next argument */
                     usage();
-                if (keymatch(argv[argn], "90", 2))
+                if (keymatch(_argv[argn], "90", 2))
                     select_transform(JXFORM_ROT_90);
-                else if (keymatch(argv[argn], "180", 3))
+                else if (keymatch(_argv[argn], "180", 3))
                     select_transform(JXFORM_ROT_180);
-                else if (keymatch(argv[argn], "270", 3))
+                else if (keymatch(_argv[argn], "270", 3))
                     select_transform(JXFORM_ROT_270);
                 else
                     usage();
@@ -362,10 +373,10 @@ public:
                 if (++argn >= argc) /* advance to next argument */
                     usage();
                 if (transformoption.crop /* reject multiple crop/drop/wipe requests */ ||
-                    !jtransform_parse_crop_spec(&transformoption, argv[argn]))
+                    !jtransform_parse_crop_spec(&transformoption, _argv[argn]))
                 {
                     debug_printf("%s: bogus -wipe argument '%s'\n",
-                                 progname, argv[argn]);
+                                 progname, _argv[argn]);
                     jt_exit(EXIT_FAILURE);
                 }
                 select_transform(JXFORM_WIPE);
@@ -468,7 +479,7 @@ public:
                     buf_size = strtoull(endp, &endp, 10);
                     if (buf_size != 0 && buf_size != ULLONG_MAX)
                     {
-                        jpeg_mem_src(&srcinfo, (const unsigned char *)buf_address, buf_size);
+                        jpeg_mem_src(&srcinfo, (const unsigned char *)buf_address, (unsigned long)buf_size);
                         mem_src_ok = true;
                     }
                 }
@@ -483,7 +494,7 @@ public:
                     jt_exit(EXIT_FAILURE);
                 }
                 struct stat st;
-                if (fstat(fileno(fp), &st) != 0)
+                if (fstat(_fileno(fp), &st) != 0)
                 {
                     fclose(fp);
                     debug_printf("%s: can't stat %s\n", progname, input_filename);
@@ -498,7 +509,7 @@ public:
                     jt_exit(EXIT_FAILURE);
                 }
                 fclose(fp);
-                jpeg_mem_src(&srcinfo, &inbuffer[0], inbuffer.size());
+                jpeg_mem_src(&srcinfo, &inbuffer[0], (unsigned long)inbuffer.size());
                 mem_src_ok = true;
             }
 
@@ -600,12 +611,17 @@ public:
     }
 };
 
-extern "C" __attribute__((visibility("default"))) __attribute__((used)) int jpegtran(int argc, char **argv, void *context)
+extern "C" JPEGTRAN_EXPORT int JPEGTRAN_INTEROP_API jpegtran(int argc, char **argv, void *context)
 {
     return JpegTran(argc, argv, context).jpegtran();
 }
 
+#if defined(_WIN32)
+#include <process.h>
+#include <windows.h>
+#else
 #include <pthread.h>
+#endif
 
 static void *jpegtran_start(void *param)
 {
@@ -615,13 +631,20 @@ static void *jpegtran_start(void *param)
     return (void *)(size_t)result;
 }
 
-extern "C" __attribute__((visibility("default"))) __attribute__((used)) int jpegtran_threaded(int argc, char **argv, void *context)
+extern "C" JPEGTRAN_EXPORT int JPEGTRAN_INTEROP_API jpegtran_threaded(int argc, char **argv, void *context)
 {
     JpegTran *jt = new JpegTran(argc, argv, context);
+#if defined(_WIN32)
+    auto hThread = _beginthreadex(NULL, 0, (_beginthreadex_proc_type)jpegtran_start, (void *)jt, 0, NULL);
+    CloseHandle((HANDLE)hThread);
+    bool success = hThread != NULL;
+#else
     pthread_t t;
-    if (pthread_create(&t, NULL, jpegtran_start, (void *)jt) != 0)
+    bool success = pthread_create(&t, NULL, jpegtran_start, (void *)jt) != 0;
+#endif
+    if (success)
     {
-        notify_progress(context, PROGRESS_PASS_EXITCODE, -1, -1); // error
+        notify_progress(context, PROGRESS_PASS_EXITCODE, -1, SIZE_MAX); // error
         return -1;
     }
     return 0;

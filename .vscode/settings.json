@@ -1,7 +1,14 @@
 {
     "files.associations": {
         "iosfwd": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "string": "cpp",
+        "chrono": "cpp",
+        "format": "cpp",
+        "xutility": "cpp",
+        "system_error": "cpp",
+        "dart_api_dl.h": "c",
+        "dart_version.h": "c"
     },
     "C_Cpp.default.configurationProvider": "go2sh.cmake-integration",
     "cmake.sourceDirectory": "${workspaceFolder}/android",

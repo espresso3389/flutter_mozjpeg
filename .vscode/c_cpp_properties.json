@@ -6,12 +6,10 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/ios/Classes/*",
+                "${workspaceFolder}/ios/Classes/**",
                 "${env:LOCALAPPDATA}/Android/Sdk/ndk/${ndkVersion}/sysroot/usr/include/*"
             ],
             "defines": [],
-            "windowsSdkVersion": "10.0.19041.0",
-            "compilerPath": "${env:LOCALAPPDATA}/Android/Sdk/ndk/${ndkVersion}/toolchains/llvm/prebuilt/windows-x86_64/bin/clang.exe",
             "cStandard": "c17",
             "cppStandard": "c++17",
             "intelliSenseMode": "linux-clang-x64",

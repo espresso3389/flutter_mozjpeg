@@ -368,7 +368,7 @@ set_quality_ratings(j_compress_ptr cinfo, char *arg, boolean force_baseline)
 #if JPEG_LIB_VERSION >= 70
             cinfo->q_scale_factor[tblno] = jpeg_float_quality_scaling(val);
 #else
-            q_scale_factor[tblno] = jpeg_float_quality_scaling(val);
+            q_scale_factor[tblno] = (int)jpeg_float_quality_scaling(val);
 #endif
             while (*arg && *arg++ != ',')
                 ; /* advance to next segment of arg
@@ -380,7 +380,7 @@ set_quality_ratings(j_compress_ptr cinfo, char *arg, boolean force_baseline)
 #if JPEG_LIB_VERSION >= 70
             cinfo->q_scale_factor[tblno] = jpeg_float_quality_scaling(val);
 #else
-            q_scale_factor[tblno] = jpeg_float_quality_scaling(val);
+            q_scale_factor[tblno] = (int)jpeg_float_quality_scaling(val);
 #endif
         }
     }

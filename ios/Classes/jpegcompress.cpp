@@ -2,15 +2,25 @@
 #include "cdjapi.h"
 #include "jconfigint.h"
 
+#if !defined(_WIN32)
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#endif
 
 #include <string>
 #include <vector>
 #include <memory>
 
 #include "vector_dest_mgr.h"
+
+#if defined(_WIN32)
+#define JPEGCOMPRESS_EXPORT __declspec(dllexport)
+#define JPEGCOMPRESS_INTEROP_API __stdcall
+#else
+#define JPEGCOMPRESS_EXPORT __attribute__((visibility("default"))) __attribute__((used))
+#define JPEGCOMPRESS_INTEROP_API
+#endif
 
 static int comps[] = {
     -1,
@@ -32,7 +42,7 @@ static int comps[] = {
     1, // RGB565???
 };
 
-extern "C" __attribute__((visibility("default"))) __attribute__((used)) void jpeg_compress(const unsigned char *p0, int width, int height, int stride, int input_cs, int quality, int dpi, void *context)
+extern "C" JPEGCOMPRESS_EXPORT void JPEGCOMPRESS_INTEROP_API jpeg_compress(const unsigned char *p0, int width, int height, int stride, int input_cs, int quality, int dpi, void *context)
 {
     jpeg_compress_struct cinfo;
     jpeg_error_mgr jsrcerr;
@@ -86,7 +96,7 @@ extern "C" __attribute__((visibility("default"))) __attribute__((used)) void jpe
     {
         debug_printf("exception: %s\n", e.what());
         jpeg_destroy_compress(&cinfo);
-        post_progress_monitor((j_common_ptr)&cinfo, PROGRESS_PASS_EXITCODE, 0, -1);
+        post_progress_monitor((j_common_ptr)&cinfo, PROGRESS_PASS_EXITCODE, 0, SIZE_MAX);
         return;
     }
 
@@ -99,7 +109,7 @@ extern "C" __attribute__((visibility("default"))) __attribute__((used)) void jpe
     post_progress_monitor((j_common_ptr)&cinfo, PROGRESS_PASS_EXITCODE, 0, 0);
 }
 
-extern "C" __attribute__((visibility("default"))) __attribute__((used)) void *jpeg_compress_get_ptr(void *p)
+extern "C" JPEGCOMPRESS_EXPORT void* JPEGCOMPRESS_INTEROP_API jpeg_compress_get_ptr(void *p)
 {
     if (!p)
         return NULL;
@@ -107,21 +117,26 @@ extern "C" __attribute__((visibility("default"))) __attribute__((used)) void *jp
     return v.data();
 }
 
-extern "C" __attribute__((visibility("default"))) __attribute__((used)) size_t jpeg_compress_get_size(void *p)
+extern "C" JPEGCOMPRESS_EXPORT size_t JPEGCOMPRESS_INTEROP_API jpeg_compress_get_size(void *p)
 {
     if (!p)
-        return -1;
+        return SIZE_MAX;
     std::vector<unsigned char> &v = *(std::vector<unsigned char> *)p;
     return v.size();
 }
 
-extern "C" __attribute__((visibility("default"))) __attribute__((used)) void jpeg_compress_release(void *p)
+extern "C" JPEGCOMPRESS_EXPORT void JPEGCOMPRESS_INTEROP_API jpeg_compress_release(void *p)
 {
     if (p)
         delete (std::vector<unsigned char> *)p;
 }
 
+#if defined(_WIN32)
+#include <process.h>
+#include <windows.h>
+#else
 #include <pthread.h>
+#endif
 
 class JpegCompressParams
 {
@@ -132,10 +147,15 @@ public:
 
     void fireAndForget()
     {
+#if defined(_WIN32)
+        auto hThread = _beginthreadex(NULL, 0, (_beginthreadex_proc_type)s_start, (void *)this, 0, NULL);
+        CloseHandle((HANDLE)hThread);
+#else
         pthread_t t;
         if (pthread_create(&t, NULL, s_start, (void *)this) != 0)
+#endif
         {
-            notify_progress(context, PROGRESS_PASS_EXITCODE, -1, -1); // error
+            notify_progress(context, PROGRESS_PASS_EXITCODE, -1, SIZE_MAX); // error
         }
     }
 
@@ -158,7 +178,7 @@ private:
     }
 };
 
-extern "C" __attribute__((visibility("default"))) __attribute__((used)) void jpeg_compress_threaded(const unsigned char *p0, int width, int height, int stride, int input_cs, int quality, int dpi, void *context)
+extern "C" JPEGCOMPRESS_EXPORT void jpeg_compress_threaded(const unsigned char *p0, int width, int height, int stride, int input_cs, int quality, int dpi, void *context)
 {
     JpegCompressParams *jcp = new JpegCompressParams(p0, width, height, stride, input_cs, quality, dpi, context);
     jcp->fireAndForget();

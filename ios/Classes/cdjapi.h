@@ -3,6 +3,14 @@
 
 #include <stddef.h>
 
+#if defined(_WIN32)
+#define CDJAPI_EXPORT __declspec(dllexport)
+#define CDJAPI_INTEROP_API __stdcall
+#else
+#define CDJAPI_EXPORT __attribute__((visibility("default"))) __attribute__((used))
+#define CDJAPI_INTEROP_API
+#endif
+
 #if defined(BUILD_FOR_ANDROID)
 #include "dart_api_dl.h"
 #elif !defined(RUNTIME_INCLUDE_DART_API_DL_H_)
@@ -16,12 +24,13 @@ extern "C"
 {
 #endif
 
-    void set_dart_port(Dart_Port_DL port);
+    CDJAPI_EXPORT void CDJAPI_INTEROP_API set_dart_port(Dart_Port_DL port);
     void debug_print(const char *message);
     void debug_printf(const char *format, ...);
     void notify_progress(void *context, int pass, int totalPass, size_t percentage);
     void notify_progress_v(void *context, int pass, int totalPass, void *address);
-    void jt_exit(int code);
+    //void jt_exit(int code);
+    #define jt_exit(code) throw code
 
 #if defined(__cplusplus)
 }
